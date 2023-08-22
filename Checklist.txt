@@ -1,0 +1,44 @@
+Rioja Recursos - Centros
+
+- Inicializar proyecto (NPM) - DONE
+    Autor: Pedro R. Spidalieri
+    Nombre: rr-xxxxxxxxx-ms (xxxxx = nombre de microservicio)
+    Versión inicial: 0.1.0 (usar 0.x.x para versiones de desarrollo, y 1.x.x para versiones de producción)
+    Licencia: MIT
+
+    Instalar dependencias necesarias: dotenv, express, jsonwebtoken, mongoose, bcrypt, cors, etc - DONE
+    Instalar dependencia de desarrollo nodemon - DONE
+
+    Crear directorio "src": en este directorio irá todo el código y archivo index.js - DONE
+    Crear scripts de development y producción: devStart y Start respectivamente - DONE
+    Crear archivo .env de ser necesario
+        Copiar claves JWT en .env ó - DONE
+        generar key jwt y refresh jwt de ser necesario
+            > node
+            > require('crypto').randomBytes(64).toString('hex')
+            > ctrl+C x2
+
+- Configurar Github - DONE
+    Nombre: rr-xxxxxxxxx-ms (xxxxx = nombre de microservicio)
+    Licencia MIT
+    Crear repositorio público
+
+
+- Configurar GIT - DONE
+    Crear archivo .gitignore
+        Agregar node_modules
+        Agregar .env si lo hubiese
+        Agregar .vscode
+    Rama principal: main
+        > git config --global init.defaultBranch main
+    Inicializar GIT
+        > git init
+        > git remote add origin https://github.com/cycclon/xxxxxx.git
+    Pull de repositorio en github para traer archivo de licencia MIT
+        > git pull origin main --allow-unrelated-histories
+
+- Inicializar Docker - DONE
+    Crear archivo Dockerfile
+    Crear archivo .dockerignore
+        Agregar node_modules
+        Agregar .env si lo hubiese
