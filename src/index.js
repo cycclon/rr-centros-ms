@@ -16,6 +16,7 @@ db.once('open',()=>console.log('Conectado a base de datos de Centros'));
 app.use(express.json());
 app.use(cors());
 
-app.use('/centros', tiposCentroRoute, CentrosRoute)
+app.use('/centros', CentrosRoute)
+app.use('/tipos-centros', tiposCentroRoute)
 
 app.listen(3002, ()=> console.log('RR: microservicio de Centros iniciado correctamente en puerto 3002.'))

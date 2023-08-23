@@ -33,6 +33,6 @@ const esquemaCentro = mongoose.Schema({
       type: Boolean,
       required: true
     }
-})
+}, { versionKey: false })
 
 module.exports = mongoose.model('Centro', esquemaCentro)
