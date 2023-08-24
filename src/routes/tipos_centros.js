@@ -71,6 +71,7 @@ router.post('/habilitacion/:idtipocentro', validarAutorizacion, obtenerTipoCentr
   }
 })
 
+// OBTIENE UN TIPO DE CENTRO POR ID
 async function obtenerTipoCentroID(req, res, next) {
   let tipoCentro
   try {

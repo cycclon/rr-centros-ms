@@ -68,6 +68,90 @@ router.post('/registrar', validarAutorizacion, async (req, res)=>{
   }
 })
 
+// MODIFICAR CENTRO (nombre, direccion, coordenadas, encargados, tipo, activo)
+async function modificarCentro(centroModificado, res){
+  // VALIDAR NIVEL DE ACCESO
+  const validacion = validarNivel(res.usuarioSolicitante, 2) 
+  if(!validacion.autorizado) {
+    return res.status(200).json(validacion)
+  }
+
+  try {
+    await centroModificado.save()
+  } catch (error) {
+    return res.status(200).json({ mensaje: error.message })
+  }
+}
+
+// MODIFICAR TIPO DE CENTRO
+router.post('/editar-tipo/:idcentro', validarAutorizacion, obtenerCentroID, async (req, res)=>{
+  res.centro.tipo = req.body.tipo
+  await modificarCentro(res.centro, res)
+  return res.status(200).json({ mensaje: `Se modificaron el/los encargado/s del centro ${res.centro.nombre}`})
+})
+
+// MODIFICAR ENCARGADOS
+router.post('/editar-encargados/:idcentro', validarAutorizacion, obtenerCentroID, async (req, res)=>{
+  res.centro.encargados = req.body.encargados
+  await modificarCentro(res.centro, res)
+  return res.status(200).json({ mensaje: `Se modificaron el/los encargado/s del centro ${res.centro.nombre}`})
+})
+
+// MODIFICAR COORDENADAS
+router.post('/editar-coordenadas/:idcentro', validarAutorizacion, obtenerCentroID, async (req, res)=>{
+  res.centro.coordenadas = req.body.coordenadas
+  await modificarCentro(res.centro, res)
+  return res.status(200).json({ mensaje: `Se modificaron las coordenadas del centro ${res.centro.nombre}`})
+})
+
+// MODIFICAR DIRECCION
+router.post('/editar-direccion/:idcentro', validarAutorizacion, obtenerCentroID, async (req, res)=>{
+  res.centro.direccion = req.body.direccion
+  await modificarCentro(res.centro, res)
+  return res.status(200).json({ mensaje: `Se modificó la dirección del centro ${res.centro.nombre}`})
+})
+
+// MODIFICAR NOMBRE
+router.post('/editar-nombre/:idcentro', validarAutorizacion, obtenerCentroID, async (req, res)=>{
+  res.centro.nombre = req.body.nombre
+  await modificarCentro(res.centro, res)
+  return res.status(200).json({ mensaje: `Se modificó el nombre del centro correctamente`})
+})
+
+// HABILITAR/DESHABILITAR CENTRO
+router.post('/habilitacion/:idcentro', validarAutorizacion, obtenerCentroID, async (req,res)=>{
+  
+
+    res.centro.activo = !res.centro.activo
+  try {
+    await modificarCentro(res.centro, res)
+    let mensajeHabilitacion = "deshabilitado"
+    if(res.centro.activo) mensajeHabilitacion = "habilitado"
+    return res.status(200).json({ 
+      mensaje: `Centro "${res.centro.nombre}" ${mensajeHabilitacion}` })
+  } catch (error) {
+    return res.status(200).json({ mensaje: error.message })
+  }
+})
+
+// OBTIENE UN CENTRO POR ID
+async function obtenerCentroID(req, res, next) {
+  let centro
+  try {
+    centro = await Centro.findOne({ _id: req.params.idcentro })
+
+    if(centro == null) {
+      return res.status(200).json({ mensaje: "No se pudo encontrar el tipo de Centro" })
+    }
+  } catch (error) {
+    return res.status(200).json({ mensaje: error.message })
+    next()
+  }
+
+  res.centro = centro
+  next()
+}
+
 // VALIDAR TIPO DE CENTRO
 async function validarTipoCentro(tipo) {
   const tiposCentros = await Tipo_Centro.find({ activo: true })
