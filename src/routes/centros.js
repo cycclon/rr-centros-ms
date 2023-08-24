@@ -2,6 +2,7 @@ const express = require("express")
 const Centro = require("../models/centro")
 const Tipo_Centro = require("../models/tipo_centro")
 const router = express.Router()
+const jwt = require('jsonwebtoken')
 
 // FUNCIÓN PARA VALIDAR EL NIVEL DE ACCESO DE UN USUARIO SOLICITANTE
 function validarNivel(usuario, nivelRequerido) {
@@ -49,7 +50,8 @@ router.post('/registrar', validarAutorizacion, async (req, res)=>{
 
   // VALIDAR QUE EL TIPO DE CENTRO EXISTA Y ESTÉ HABILITADO
   if(! await validarTipoCentro(req.body.tipo)) return res.status(200).json({ 
-    mensaje: `El tipo de centro ${req.body.tipo} es inexistente o se encuentra deshabilitado.` })
+    mensaje: `El tipo de centro ${req.body.tipo} es inexistente o se encuentra deshabilitado.`
+  })
 
   try {
     const centro = new Centro({
@@ -85,9 +87,14 @@ async function modificarCentro(centroModificado, res){
 
 // MODIFICAR TIPO DE CENTRO
 router.post('/editar-tipo/:idcentro', validarAutorizacion, obtenerCentroID, async (req, res)=>{
+  // VALIDAR QUE EL NUEVO TIPO ASIGNADO EXISTA Y ESTE HABILITADO
+  if(! await validarTipoCentro(req.body.tipo)) return res.status(200).json({ 
+    mensaje: `El tipo de centro ${req.body.tipo} es inexistente o se encuentra deshabilitado.`
+  })
+
   res.centro.tipo = req.body.tipo
   await modificarCentro(res.centro, res)
-  return res.status(200).json({ mensaje: `Se modificaron el/los encargado/s del centro ${res.centro.nombre}`})
+  return res.status(200).json({ mensaje: `Se cambió a ${res.centro.tipo} el tipo del centro ${res.centro.nombre}`})
 })
 
 // MODIFICAR ENCARGADOS
@@ -120,8 +127,6 @@ router.post('/editar-nombre/:idcentro', validarAutorizacion, obtenerCentroID, as
 
 // HABILITAR/DESHABILITAR CENTRO
 router.post('/habilitacion/:idcentro', validarAutorizacion, obtenerCentroID, async (req,res)=>{
-  
-
     res.centro.activo = !res.centro.activo
   try {
     await modificarCentro(res.centro, res)
@@ -160,8 +165,19 @@ async function validarTipoCentro(tipo) {
 
 // VALIDAR TOKEN JWT
 function validarAutorizacion(req, res, next) {  
-  res.usuarioSolicitante = { nombre: "test", tipo: 2 }
-  next()
+  const encabezadoAut = req.headers['authorization']
+
+  const token = encabezadoAut && encabezadoAut.split(' ')[1]
+  
+  if(token == null) return res.status(201).json({ autorizado: false })
+
+  jwt.verify(token, process.env.JWT_KEY, (err, usuario)=>{
+      if(err) return res.status(201).json({ autorizado: false, motivo: err.message })
+
+      // USUARIO QUE SOLICITA LA FUNCIONALIDAD A LA API
+      res.usuarioSolicitante = usuario
+      next()
+  })
 }
 
 module.exports = router

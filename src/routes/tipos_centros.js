@@ -1,6 +1,7 @@
 const express = require("express")
 const Tipo_Centro = require("../models/tipo_centro")
 const router = express.Router()
+const jwt = require('jsonwebtoken')
 
 // FUNCIÓN PARA VALIDAR EL NIVEL DE ACCESO DE UN USUARIO SOLICITANTE
 function validarNivel(usuario, nivelRequerido) {
@@ -90,9 +91,20 @@ async function obtenerTipoCentroID(req, res, next) {
 }
 
 // VALIDAR TOKEN JWT
-function validarAutorizacion(req, res, next) {
-  res.usuarioSolicitante = { nombre: "test", tipo: 2 }
-  next()
+function validarAutorizacion(req, res, next) {  
+  const encabezadoAut = req.headers['authorization']
+
+  const token = encabezadoAut && encabezadoAut.split(' ')[1]
+  
+  if(token == null) return res.status(201).json({ autorizado: false })
+
+  jwt.verify(token, process.env.JWT_KEY, (err, usuario)=>{
+      if(err) return res.status(201).json({ autorizado: false, motivo: err.message })
+
+      // USUARIO QUE SOLICITA LA FUNCIONALIDAD A LA API
+      res.usuarioSolicitante = usuario
+      next()
+  })
 }
 
 module.exports = router
