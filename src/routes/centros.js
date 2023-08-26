@@ -2,23 +2,7 @@ const express = require("express")
 const Centro = require("../models/centro")
 const Tipo_Centro = require("../models/tipo_centro")
 const router = express.Router()
-const jwt = require('jsonwebtoken')
-
-// FUNCIÓN PARA VALIDAR EL NIVEL DE ACCESO DE UN USUARIO SOLICITANTE
-function validarNivel(usuario, nivelRequerido) {
-  const resultado = {
-    autorizado: false, 
-    motivo: 'Nivel de acceso insuficiente', 
-    nivelRequerido: nivelRequerido, 
-    nivel: usuario.tipo
-  }
-  if(usuario.tipo <= nivelRequerido) {    
-    resultado.autorizado = true
-    resultado.motivo = 'Autorizado'
-  }
-
-  return resultado
-}
+const { validarAutorizacion, validarNivel } = require("../utilities/utilidades")
 
 // OBTENER TODOS LOS CENTROS
 router.get('/', async (req, res)=>{
@@ -41,12 +25,7 @@ router.get('/tipo/:tipo', async (req, res)=>{
 })
 
 // REGISTRAR NUEVO CENTRO
-router.post('/registrar', validarAutorizacion, async (req, res)=>{
-  // VALIDAR NIVEL DE ACCESO  
-  const validacion = validarNivel(res.usuarioSolicitante, 2)
-  if(!validacion.autorizado) {
-    return res.status(200).json(validacion)
-  }  
+router.post('/registrar', validarAutorizacion, validarNivel(2), async (req, res)=>{
 
   // VALIDAR QUE EL TIPO DE CENTRO EXISTA Y ESTÉ HABILITADO
   if(! await validarTipoCentro(req.body.tipo)) return res.status(200).json({ 
@@ -72,12 +51,6 @@ router.post('/registrar', validarAutorizacion, async (req, res)=>{
 
 // MODIFICAR CENTRO (nombre, direccion, coordenadas, encargados, tipo, activo)
 async function modificarCentro(centroModificado, res){
-  // VALIDAR NIVEL DE ACCESO
-  const validacion = validarNivel(res.usuarioSolicitante, 2) 
-  if(!validacion.autorizado) {
-    return res.status(200).json(validacion)
-  }
-
   try {
     await centroModificado.save()
   } catch (error) {
@@ -86,7 +59,7 @@ async function modificarCentro(centroModificado, res){
 }
 
 // MODIFICAR TIPO DE CENTRO
-router.post('/editar-tipo/:idcentro', validarAutorizacion, obtenerCentroID, async (req, res)=>{
+router.post('/editar-tipo/:idcentro', validarAutorizacion, validarNivel(2), obtenerCentroID, async (req, res)=>{
   // VALIDAR QUE EL NUEVO TIPO ASIGNADO EXISTA Y ESTE HABILITADO
   if(! await validarTipoCentro(req.body.tipo)) return res.status(200).json({ 
     mensaje: `El tipo de centro ${req.body.tipo} es inexistente o se encuentra deshabilitado.`
@@ -98,36 +71,36 @@ router.post('/editar-tipo/:idcentro', validarAutorizacion, obtenerCentroID, asyn
 })
 
 // MODIFICAR ENCARGADOS
-router.post('/editar-encargados/:idcentro', validarAutorizacion, obtenerCentroID, async (req, res)=>{
+router.post('/editar-encargados/:idcentro', validarAutorizacion, validarNivel(2), obtenerCentroID, async (req, res)=>{
   res.centro.encargados = req.body.encargados
   await modificarCentro(res.centro, res)
   return res.status(200).json({ mensaje: `Se modificaron el/los encargado/s del centro ${res.centro.nombre}`})
 })
 
 // MODIFICAR COORDENADAS
-router.post('/editar-coordenadas/:idcentro', validarAutorizacion, obtenerCentroID, async (req, res)=>{
+router.post('/editar-coordenadas/:idcentro', validarAutorizacion, validarNivel(2), obtenerCentroID, async (req, res)=>{
   res.centro.coordenadas = req.body.coordenadas
   await modificarCentro(res.centro, res)
   return res.status(200).json({ mensaje: `Se modificaron las coordenadas del centro ${res.centro.nombre}`})
 })
 
 // MODIFICAR DIRECCION
-router.post('/editar-direccion/:idcentro', validarAutorizacion, obtenerCentroID, async (req, res)=>{
+router.post('/editar-direccion/:idcentro', validarAutorizacion, validarNivel(2), obtenerCentroID, async (req, res)=>{
   res.centro.direccion = req.body.direccion
   await modificarCentro(res.centro, res)
   return res.status(200).json({ mensaje: `Se modificó la dirección del centro ${res.centro.nombre}`})
 })
 
 // MODIFICAR NOMBRE
-router.post('/editar-nombre/:idcentro', validarAutorizacion, obtenerCentroID, async (req, res)=>{
+router.post('/editar-nombre/:idcentro', validarAutorizacion, validarNivel(2), obtenerCentroID, async (req, res)=>{
   res.centro.nombre = req.body.nombre
   await modificarCentro(res.centro, res)
   return res.status(200).json({ mensaje: `Se modificó el nombre del centro correctamente`})
 })
 
 // HABILITAR/DESHABILITAR CENTRO
-router.post('/habilitacion/:idcentro', validarAutorizacion, obtenerCentroID, async (req,res)=>{
-    res.centro.activo = !res.centro.activo
+router.post('/habilitacion/:idcentro', validarAutorizacion, validarNivel(2), obtenerCentroID, async (req,res)=>{
+  res.centro.activo = !res.centro.activo
   try {
     await modificarCentro(res.centro, res)
     let mensajeHabilitacion = "deshabilitado"
@@ -161,23 +134,6 @@ async function obtenerCentroID(req, res, next) {
 async function validarTipoCentro(tipo) {
   const tiposCentros = await Tipo_Centro.find({ activo: true })
   return tiposCentros.find(tc => tc.nombre === tipo)
-}
-
-// VALIDAR TOKEN JWT
-function validarAutorizacion(req, res, next) {  
-  const encabezadoAut = req.headers['authorization']
-
-  const token = encabezadoAut && encabezadoAut.split(' ')[1]
-  
-  if(token == null) return res.status(201).json({ autorizado: false })
-
-  jwt.verify(token, process.env.JWT_KEY, (err, usuario)=>{
-      if(err) return res.status(201).json({ autorizado: false, motivo: err.message })
-
-      // USUARIO QUE SOLICITA LA FUNCIONALIDAD A LA API
-      res.usuarioSolicitante = usuario
-      next()
-  })
 }
 
 module.exports = router

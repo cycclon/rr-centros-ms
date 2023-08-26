@@ -1,23 +1,7 @@
 const express = require("express")
 const Tipo_Centro = require("../models/tipo_centro")
 const router = express.Router()
-const jwt = require('jsonwebtoken')
-
-// FUNCIÓN PARA VALIDAR EL NIVEL DE ACCESO DE UN USUARIO SOLICITANTE
-function validarNivel(usuario, nivelRequerido) {
-  const resultado = {
-    autorizado: false, 
-    motivo: 'Nivel de acceso insuficiente', 
-    nivelRequerido: nivelRequerido, 
-    nivel: usuario.tipo
-  }
-  if(usuario.tipo <= nivelRequerido) {    
-    resultado.autorizado = true
-    resultado.motivo = 'Autorizado'
-  }
-
-  return resultado
-}
+const { validarAutorizacion, validarNivel } = require('../utilities/utilidades')
 
 // LISTAR TODOS LOS TIPOS DE CENTROS
 router.get('/', async (req, res)=>{
@@ -30,13 +14,7 @@ router.get('/', async (req, res)=>{
 })
 
 // REGISTRAR UN NUEVO TIPO DE CENTRO
-router.post('/registrar', validarAutorizacion, async (req, res)=>{
-  // VALIDAR NIVEL DE ACCESO
-  const validacion = validarNivel(res.usuarioSolicitante, 2)
-  if(!validacion.autorizado) {
-    return res.status(200).json(validacion)
-  }
-
+router.post('/registrar', validarAutorizacion, validarNivel(2), async (req, res)=>{
   const tipoCentro = new Tipo_Centro({
     nombre: req.body.nombre,
     activo: true
@@ -53,14 +31,8 @@ router.post('/registrar', validarAutorizacion, async (req, res)=>{
 
 
 // HABILITAR/DESHABILITAR TIPO DE CENTRO
-router.post('/habilitacion/:idtipocentro', validarAutorizacion, obtenerTipoCentroID, async (req,res)=>{
-  // VALIDAR NIVEL DE ACCESO
-  const validacion = validarNivel(res.usuarioSolicitante, 2) 
-  if(!validacion.autorizado) {
-    return res.status(200).json(validacion)
-  }
-
-    res.tipoCentro.activo = !res.tipoCentro.activo
+router.post('/habilitacion/:idtipocentro', validarAutorizacion, validarNivel(2), obtenerTipoCentroID, async (req,res)=>{
+  res.tipoCentro.activo = !res.tipoCentro.activo
   try {
     const tipoCentroActualizado = await res.tipoCentro.save()
     let mensajeHabilitacion = "deshabilitado"
@@ -88,23 +60,6 @@ async function obtenerTipoCentroID(req, res, next) {
 
   res.tipoCentro = tipoCentro
   next()
-}
-
-// VALIDAR TOKEN JWT
-function validarAutorizacion(req, res, next) {  
-  const encabezadoAut = req.headers['authorization']
-
-  const token = encabezadoAut && encabezadoAut.split(' ')[1]
-  
-  if(token == null) return res.status(201).json({ autorizado: false })
-
-  jwt.verify(token, process.env.JWT_KEY, (err, usuario)=>{
-      if(err) return res.status(201).json({ autorizado: false, motivo: err.message })
-
-      // USUARIO QUE SOLICITA LA FUNCIONALIDAD A LA API
-      res.usuarioSolicitante = usuario
-      next()
-  })
 }
 
 module.exports = router
