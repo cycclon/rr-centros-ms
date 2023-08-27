@@ -123,7 +123,6 @@ async function obtenerCentroID(req, res, next) {
     }
   } catch (error) {
     return res.status(200).json({ mensaje: error.message })
-    next()
   }
 
   res.centro = centro
