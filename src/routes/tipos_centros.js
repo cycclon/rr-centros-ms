@@ -9,7 +9,7 @@ router.get('/', async (req, res)=>{
     const tiposCentros = await Tipo_Centro.find()
     return res.status(200).json(tiposCentros)
   } catch (error) {
-    return res.status(200).json({ mensaje: error.message })
+    return res.status(200).json({error: 2, mensaje: error.message })
   }
 })
 
@@ -22,10 +22,10 @@ router.post('/registrar', validarAutorizacion, validarNivel(2), async (req, res)
 
   try {
     await tipoCentro.save()
-    return res.status(200).json({ 
+    return res.status(200).json({ error: 0,
       mensaje: `Tipo de centro "${req.body.nombre}" registrado correctamente` })
   } catch (error) {
-    return res.status(200).json({ mensaje: error.message })
+    return res.status(200).json({ error: 2, mensaje: error.message })
   }
 })
 
@@ -37,10 +37,10 @@ router.post('/habilitacion/:idtipocentro', validarAutorizacion, validarNivel(2),
     const tipoCentroActualizado = await res.tipoCentro.save()
     let mensajeHabilitacion = "deshabilitado"
     if(tipoCentroActualizado.activo) mensajeHabilitacion = "habilitado"
-    return res.status(200).json({ 
+    return res.status(200).json({ error: 0,
       mensaje: `Tipo de centro "${tipoCentroActualizado.nombre}" ${mensajeHabilitacion}` })
   } catch (error) {
-    return res.status(200).json({ mensaje: error.message })
+    return res.status(200).json({ error: 2, mensaje: error.message })
   }
 })
 
@@ -51,10 +51,10 @@ async function obtenerTipoCentroID(req, res, next) {
     tipoCentro = await Tipo_Centro.findOne({_id: req.params.idtipocentro})
 
     if(tipoCentro == null) {
-      return res.status(200).json({ mensaje: "No se pudo encontrar el tipo de Centro" })
+      return res.status(200).json({ error: 1, mensaje: "No se pudo encontrar el tipo de Centro" })
     }
   } catch (error) {
-    return res.status(200).json({ mensaje: error.message })
+    return res.status(200).json({ error: 2, mensaje: error.message })
     next()
   }
 

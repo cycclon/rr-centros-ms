@@ -7,7 +7,7 @@ const CentrosRoute = require('./routes/centros')
 const mongoose = require('mongoose');
 const cors = require('cors');
 
-mongoose.connect(process.env.DB_URL);
+mongoose.connect(process.env.DB_URL + "centros?authSource=admin");
 const db = mongoose.connection;
 
 db.on('error', (error)=> console.log(error));

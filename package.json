@@ -1,10 +1,10 @@
 {
   "name": "rr-centros-ms",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Microservicio de Centros para sistema Rioja Recursos",
   "main": "src/index.js",
   "scripts": {
-    "Start": "npm src/index.js",
+    "Start": "node src/index.js",
     "devStart": "nodemon src/index.js"
   },
   "author": "Pedro R. Spidalieri",
